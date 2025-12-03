@@ -1,0 +1,330 @@
+#include <bits/stdc++.h>
+#include <string>
+
+using ll = long long;
+using db = long double;
+using str = std::string; 
+
+using pii = std::pair<int, int>;
+using pll = std::pair<ll, ll>;
+using pd = std::pair<db, db>;
+#define pb push_back
+#define mp make_pair
+#define fi first
+#define se second
+#define X first
+#define Y second
+
+template <class T> using V = std::vector<T>;
+template <class T, size_t SZ> using AR = std::array<T, SZ>;
+using vi = V<int>;
+using vvi = V<vi>;
+using vb = V<bool>;
+using vll = V<ll>;
+using vd = V<db>;
+using vs = V<str>;
+using vpii = V<pii>;
+using vpll = V<pll>;
+using vpd = V<pd>;
+
+template <class T> using pair2 = std::pair<T, T>;
+
+template <class T> int isz(const T &a) { return a.size(); }
+
+#define all(x) x.begin(), x.end()
+#define rall(x) x.rbegin(), x.rend()
+#define sor(x) sort(all(x))
+#define bg(x) x.begin()
+
+template <class T> int lwb(V<T> &a, const T &b) {
+  return int(std::lower_bound(all(a), b) - bg(a));
+}
+template <class T> int upb(V<T> &a, const T &b) {
+  return int(std::upper_bound(all(a), b) - bg(a));
+}
+ 
+template <class T> using pqg = std::priority_queue<T, std::vector<T>, std::greater<T>>;
+template <class T> using pql = std::priority_queue<T, std::vector<T>, std::less<T>>;
+
+const int MOD = 998244353;
+const int MX = 2e5 + 5;
+const ll BIG = 1e18; 
+const db PI = acos((db)-1);
+const int dx[4]{0, 1, 0, -1}, dy[4]{-1, 0, 1, 0}; // u r d l
+std::mt19937 rng((uint32_t)std::chrono::steady_clock::now().time_since_epoch().count());
+
+template <class T> bool min(T &a, const T &b) {
+  return b < a ? a = b, 1 : 0;
+}
+template <class T> bool max(T &a, const T &b) {
+  return a < b ? a = b, 1 : 0;
+}
+template <class T, class U> bool min(T &a, const U &b) {
+  return b < a ? a = b, 1 : 0;
+}
+template <class T, class U> bool max(T &a, const U &b) {
+  return a < b ? a = b, 1 : 0;
+}
+
+struct custom_int_hash {
+  static uint64_t splitmix64(uint64_t x) {
+    x += 0x9e3779b97f4a7c15;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+    return x ^ (x >> 31);
+  }
+ 
+  size_t operator()(uint64_t x) const {
+    static const uint64_t FIXED_RANDOM =
+      std::chrono::steady_clock::now().time_since_epoch().count();
+    return splitmix64(x + FIXED_RANDOM);
+  }
+} hasher;
+
+// DSU
+struct DSU{
+	std::vector<int> sz, par;
+	
+	DSU(int n) : sz(n+1, 1), par(n + 1){
+		for(int i = 1; i <= n; ++i)
+			par[i] = i;
+	}
+	
+	bool is_connected(int u, int v){
+		return get_par(u) == get_par(v);
+    }
+	
+	int get_par(int u) {
+		//return (u == par[u] ? u : get_par(par[u]));
+		
+		//эвристика сжатия путей
+		return (u == par[u] ? u : par[u] = get_par(par[u])); 
+	}
+		
+	bool connect(int u, int v){
+		u = get_par(u), v = get_par(v);
+		if (u == v) return false;
+		//ранговая эвристика
+        if (sz[u] < sz[v]) std::swap(u, v);
+		//присоединение v к u
+		sz[u] += sz[v];
+		par[v] = u;
+		return true;
+	}
+};
+
+
+// DSURollback
+struct DSURollback{
+	std::vector<int> sz, par;
+	//        ptr куда писать, значение куда писать
+	std::vector<std::pair<int*, int>> history;
+	
+	DSURollback(int n) : sz(n+1), par(n + 1){
+		for(int i = 1; i <= n; ++i){
+			par[i] = i;
+		}
+	}
+	
+	bool is_connected(int u, int v) const{
+		return get_par(u) == get_par(v);
+	}
+	
+	int get_par(int u) const {
+		return (u == par[u] ? u : get_par(par[u]));
+	}
+	
+	void add_to_history(int* ptr){
+		history.emplace_back(ptr, *ptr);
+	}
+	
+	void roll_back(int version){
+		while(history.size() > version){
+			auto [ptr, val] = history.back();
+			history.pop_back();
+			*ptr = val;	
+		}
+	}
+	
+	int get_version() const{
+		return (int)history.size();
+	}
+	
+	bool connect(int u, int v){
+		u = get_par(u), v = get_par(v);
+		if (u == v) return false;
+		if (sz[u] < sz[v]) std::swap(u, v);
+		//заполнить изменненые значения
+		add_to_history(&sz[u]);
+		add_to_history(&par[v]);
+		
+		//присоединение v к u
+		sz[u] += sz[v];
+		par[v] = u;
+		return true;
+	}
+};
+
+
+//fenwick
+struct Fenwick {
+    int n;
+    std::vector<int> f;
+
+    Fenwick(int n) : n(n), f(n + 1, 0) {}
+
+    void add(int i, int v) {
+        for (; i <= n; i += i & -i)
+			f[i] += v;
+			//if we have mod
+            //f[i] = ([i] + v) % mod;
+    }
+
+    void add_range(int l, int r, int v) {
+        add(l, v);
+        //if (r + 1 <= n) add(r + 1, (mod - v) % mod);
+        if (r + 1 <= n) add(r + 1, -v);
+    }
+
+    int get(int i) {
+        int res = 0;
+        for (; i > 0; i -= i & -i)
+			res += f[i];
+            //res = (res + f[i]) % mod;
+        return res;
+    }
+};
+
+// Feinwick min in 1-indexed
+struct FenwickMin {
+    std::vector<int> bit;
+    int n;
+    const int INF = (int)1e9;
+
+    FenwickMin(int n) : n(n), bit(n, INF) {}
+
+    FenwickMin(std::vector<int> a) : FenwickMin(a.size()) {
+        for (size_t i = 0; i < a.size(); i++)
+            add(i, a[i]);
+    }
+
+    int getmin(int r) {
+        int ret = INF;
+        for (; r >= 0; r = (r & (r + 1)) - 1)
+            ret = min(ret, bit[r]);
+        return ret;
+    }
+
+    void add(int idx, int val) {
+        for (; idx < n; idx = idx | (idx + 1))
+            bit[idx] = min(bit[idx], val);
+    }
+};
+
+// int n = 1e5; // кол-во узлов
+// std::vector<std::vector<int>>& adj(n + 1); // используется 1-индексация
+// std::vector<bool> visited(n + 1); // тут будем отмечать посещенные вершины
+std::vector<std::vector<int>> dfs(int v, std::vector<std::vector<int>>& adj, std::vector<bool>& visited) {
+    visited[v] = true;
+    for (int u : adj[v])
+        if (!visited[u])
+            dfs(u, adj, visited); 
+    return adj;
+}
+
+
+std::vector<std::vector<int>> bfs(std::vector<std::vector<int>>& g, int cnt, int start){
+    std::queue<int> q;
+    std::vector<int> dist(cnt), from(cnt);
+    q.push(start);
+    from[start] = -1;
+
+    while (!q.empty()) {
+        int v = q.front();
+        q.pop();
+        for (int to: g[v]) {
+            if (dist[to] >= dist[v] + 1){
+                q.push(to);
+                dist[to] = dist[v] + 1;
+                from[to] = v;
+            }
+        }
+    }
+    return g;
+}
+
+//powmod
+int binpow(int a, int n){
+    int r = 1;
+    while(n){
+        if (n & 1) r = r * r % MOD;
+        a = a * a % MOD;
+        n >>= 1;
+    }
+    return r;
+}
+
+
+// END TEMPLATE
+
+
+void part1(){
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(0);
+
+    str s;
+    int ans{};
+    while(std::cin >> s){
+        int max{};
+        for(int i =0,e=s.size(); i < e-1; ++i){
+            for(int j = 1; j < e; ++j){
+                // std::cout << s[i] << s[j] << '\n';
+                if (i != j && i < j){
+                    int a = 10*(s[i]-'0') + s[j]-'0';
+                    max = std::max(max, a);
+                }
+            }
+        }
+        std::cout << max << '\n';
+        ans += max;
+    }
+    std::cout << ans;
+}
+
+void part2(){
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(0);
+
+    str s;
+    ll ans{};
+    while(std::cin >> s){
+        int k = 12;
+        int n = isz(s); 
+        str out;
+
+        int pos = 0;
+        for (int taken = 0; taken < k; ++taken) {
+            int need = k - taken;
+            int limit = n - need;
+
+            char best = '0';
+            int best_i = pos;
+            for (int i = pos; i <= limit; i++) {
+                if (s[i] > best) {
+                    best = s[i];
+                    best_i = i;
+                }
+            }
+            out += best;
+            pos = best_i + 1;
+        }   
+        std::cout << out << '\n';
+        ans += stoll(out);
+    }
+    std::cout << ans;
+
+}
+
+int32_t main(){
+    part2();
+}
