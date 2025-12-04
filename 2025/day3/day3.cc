@@ -298,18 +298,17 @@ void part2(){
     str s;
     ll ans{};
     while(std::cin >> s){
-        int k = 12;
         int n = isz(s); 
         str out;
 
         int pos = 0;
-        for (int taken = 0; taken < k; ++taken) {
-            int need = k - taken;
-            int limit = n - need;
+        for (int get = 0; get < 12; ++get) {
+            int need = 12 - get;
+            int r = n - need;
 
             char best = '0';
             int best_i = pos;
-            for (int i = pos; i <= limit; i++) {
+            for (int i = pos; i <= r; i++) {
                 if (s[i] > best) {
                     best = s[i];
                     best_i = i;
