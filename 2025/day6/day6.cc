@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <cstdio>
 #include <algorithm>
+#include <typeinfo>
 
 using ll = long long;
 using db = long double;
@@ -334,90 +335,73 @@ void part2(){
         lines.emplace_back(s);
     }
     
-    lines.pop_back();
     str opsline = lines.back();
     lines.pop_back();
-    
 
-    vs operations;
+    vi zpos;
+    for(int i = 0, e = isz(opsline); i < e; ++i){
+        if (opsline[i] == '*' || opsline[i] == '+')
+            zpos.emplace_back(i-1);
+    }
+
+
+    for(auto& line : lines){
+        for(int i = 0, e = isz(line); i < e; ++i){
+            if (!std::isdigit(line[i]) && std::find(all(zpos), i) == zpos.end())
+                line[i] = '0';
+        }
+    }
+
+    vs tlines(isz(lines[0]));
+
+    for(int i = 0, e = isz(lines); i < e; ++i){
+        for(int j = 0, ee = isz(lines[0]); j < ee; ++j){
+            tlines[j] += lines[i][j];
+        }
+    }
+
+    str ops;
     std::stringstream ss(opsline);
-    while(ss >> s) {
-        operations.push_back(s);
-    }
+    while (std::getline(ss, s, ' '))
+        ops += s;
 
 
-    vvs snumbers(isz(operations));
-    
-    for(const auto& st : lines) {
-        std::stringstream sss(st);
-        int cnt = 0;
-        while(sss >> s && cnt < isz(operations)) {
-            snumbers[cnt].push_back(s);
-            cnt++;
-        }
-    }
+    ll ans{};
+    int opi{};
 
-    vvll numbers;
+    int a = stoi(tlines[0]);
+    while(a % 10 == 0)
+        a /= 10;
 
+    ll t = a;
+    for(int i = 1, e = isz(tlines); i < e; ++i){
 
-    for(int col = 0; col < isz(operations); ++col){
-        int maxlen = 0;
-        for(const auto& num_str : snumbers[col]) {
-            if(num_str.length() > maxlen) {
-                maxlen = num_str.length();
-            }
-        }
+        if (tlines[i].empty() || tlines[i][0] == ' ') {
 
-        std::cout << 1 << '\n';
+            ++i;
+            ans += t;
 
-        vs aligned = snumbers[col];
-        for(auto& num_str : aligned) {
-            if(num_str.length() < maxlen) {
-                num_str.append(maxlen - num_str.length(), '0');
-            }
+            int b = stoi(tlines[i]);
+            while(b % 10 == 0)
+                b /= 10;
+
+            t = b;
+            ++opi;
+            continue;
         }
 
-        std::cout << 2 << '\n';
-
-        // BUG: SEGFAULT
-        for(int pos = 0; pos < maxlen; pos++) {
-            str vertical_num;
-            for(const auto& num_str : aligned) {
-                // if(pos < num_str.length()) {
-                    vertical_num += num_str[pos];
-                // }
-            }
-            if(!vertical_num.empty()) {
-                numbers[col].push_back(stoll(vertical_num));
-            }
-        }
-    }
-    std::cout << 3 << '\n';
-
-    reverse(all(numbers));
-    reverse(all(operations));
-
-    ll ans{}; 
-    
-    for(int i = 0, e = isz(operations); i < e; i++) {
-        if(numbers[i].empty()) continue;
+        int a = stoi(tlines[i]);
+        while(a % 10 == 0)
+            a /= 10;
         
-        char op = operations[i][0];
-        ll result = numbers[i][0];
-        
-        for(size_t j = 1; j < numbers[i].size(); j++) {
-            if(op == '*') {
-                result *= numbers[i][j];
-            } else if(op == '+') {
-                result += numbers[i][j];
-            }
-        }
-        
-        ans += result;
+
+        if (ops[opi] == '+') 
+            t += a;
+        else
+            t *= a;
     }
-    std::cout << ans << '\n';
+    std::cout << ans + t << '\n';
 }
-
 
 int32_t main(){
     part2();
